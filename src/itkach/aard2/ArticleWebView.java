@@ -108,13 +108,6 @@ public class ArticleWebView extends WebView {
 
             byte[] noBytes = new byte[0];
 
-            TimerTask applyStylePref = new TimerTask() {
-                @Override
-                public void run() {
-                    getHandler().post(applyStyleRunnable);
-                }
-            };
-
             Runnable applyStyleRunnable = new Runnable() {
                 @Override
                 public void run() {
@@ -122,6 +115,15 @@ public class ArticleWebView extends WebView {
                 }
             };
 
+            TimerTask applyStylePref = new TimerTask() {
+                @Override
+                public void run() {
+                    android.os.Handler handler = getHandler();
+                    if (handler != null) {
+                        handler.post(applyStyleRunnable);
+                    }
+                }
+            };
 
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -129,7 +131,11 @@ public class ArticleWebView extends WebView {
                 currentSlobId = bd == null ? null : bd.slobId;
                 Log.d(TAG, "onPageStarted: " + url);
                 view.loadUrl("javascript:" + styleSwitcherJs);
-                timer.schedule(applyStylePref, 60, 250);
+                try {
+                    timer.schedule(applyStylePref, 60, 250);
+                } catch (IllegalStateException ex) {
+                    Log.w(TAG, "Failed to schedule applyStylePref", ex);
+                }
             }
 
             @Override
@@ -157,7 +163,7 @@ public class ArticleWebView extends WebView {
                 if (host == null || host.toLowerCase().equals("localhost")) {
                     return null;
                 }
-                if (allowRemoteContent(getContext())) {
+                if (allowRemoteContent()) {
                     return null;
                 }
                 return new WebResourceResponse("text/plain", "UTF-8",
@@ -197,10 +203,9 @@ public class ArticleWebView extends WebView {
         applyTextZoomPref();
     }
 
-    boolean allowRemoteContent(Context context) {
+    boolean allowRemoteContent() {
         SharedPreferences prefs = this.prefs();
         String prefValue = prefs.getString(PREF_REMOTE_CONTENT, PREF_REMOTE_CONTENT_WIFI);
-        Log.d(TAG, "Remote content preference: " + prefValue);
         if (prefValue.equals(PREF_REMOTE_CONTENT_ALWAYS)) {
             return true;
         }

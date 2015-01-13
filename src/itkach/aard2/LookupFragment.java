@@ -24,8 +24,8 @@ public class LookupFragment extends BaseListFragment implements LookupListener {
 
 
     @Override
-    Icons getEmptyIcon() {
-        return Icons.SEARCH;
+    int getEmptyIcon() {
+        return R.xml.ic_empty_view_search;
     }
 
     @Override
@@ -160,7 +160,9 @@ public class LookupFragment extends BaseListFragment implements LookupListener {
 
     @Override
     public void onDestroy() {
-        timer.cancel();
+        if (timer != null) {
+            timer.cancel();
+        }
         Application app = (Application) getActivity().getApplication();
         app.removeLookupListener(this);
         super.onDestroy();

@@ -17,11 +17,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CheckedTextView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.shamanland.fonticon.FontIconDrawable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,6 +45,12 @@ public class SettingsListAdapter extends BaseAdapter implements SharedPreference
     private Fragment                fragment;
 
 
+    final static int POS_REMOTE_CONTENT = 0;
+    final static int POS_FAV_RANDOM = 1;
+    final static int POS_USER_STYLES = 2;
+    final static int POS_CLEAR_CACHE = 3;
+    final static int POS_ABOUT = 4;
+
     SettingsListAdapter(Fragment fragment) {
         this.fragment = fragment;
         this.context = fragment.getActivity();
@@ -61,7 +70,7 @@ public class SettingsListAdapter extends BaseAdapter implements SharedPreference
 
     @Override
     public int getCount() {
-        return 4;
+        return 5;
     }
 
     @Override
@@ -87,12 +96,41 @@ public class SettingsListAdapter extends BaseAdapter implements SharedPreference
     @Override
     public View getView(int i, View convertView, ViewGroup parent) {
         switch (i) {
-            case 0: return getRemoteContentSettingsView(convertView, parent);
-            case 1: return getUserStylesView(convertView, parent);
-            case 2: return getClearCacheView(convertView, parent);
-            case 3: return getAboutView(convertView, parent);
+            case POS_REMOTE_CONTENT: return getRemoteContentSettingsView(convertView, parent);
+            case POS_FAV_RANDOM: return getFavRandomSwitchView(convertView, parent);
+            case POS_USER_STYLES: return getUserStylesView(convertView, parent);
+            case POS_CLEAR_CACHE: return getClearCacheView(convertView, parent);
+            case POS_ABOUT: return getAboutView(convertView, parent);
         }
         return null;
+    }
+
+    private View getFavRandomSwitchView(View convertView, ViewGroup parent) {
+        View view;
+        LayoutInflater inflater = (LayoutInflater) parent.getContext()
+                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final Application app = (Application)context.getApplication();
+        if (convertView != null) {
+            view = convertView;
+        }
+        else {
+            view = inflater.inflate(R.layout.settings_fav_random_search, parent,
+                    false);
+            final CheckedTextView toggle = (CheckedTextView)view.findViewById(R.id.setting_fav_random_search);
+            toggle.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    boolean currentValue = app.isOnlyFavDictsForRandomLookup();
+                    boolean newValue = !currentValue;
+                    app.setOnlyFavDictsForRandomLookup(newValue);
+                    toggle.setChecked(newValue);
+                }
+            });
+        }
+        boolean currentValue = app.isOnlyFavDictsForRandomLookup();
+        CheckedTextView toggle = (CheckedTextView)view.findViewById(R.id.setting_fav_random_search);
+        toggle.setChecked(currentValue);
+        return view;
     }
 
     private View getUserStylesView(View convertView, final ViewGroup parent) {
@@ -109,9 +147,8 @@ public class SettingsListAdapter extends BaseAdapter implements SharedPreference
 
             view = inflater.inflate(R.layout.settings_user_styles_item, parent,
                     false);
-
             ImageView btnAdd = (ImageView)view.findViewById(R.id.setting_btn_add_user_style);
-            btnAdd.setImageDrawable(Icons.ADD.forList());
+            btnAdd.setImageDrawable(FontIconDrawable.inflate(context, R.xml.ic_list_add));
             btnAdd.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View view) {
@@ -140,7 +177,7 @@ public class SettingsListAdapter extends BaseAdapter implements SharedPreference
             View styleItemView = inflater.inflate(R.layout.user_styles_list_item, parent,
                     false);
             ImageView btnDelete = (ImageView)styleItemView.findViewById(R.id.user_styles_list_btn_delete);
-            btnDelete.setImageDrawable(Icons.TRASH.forListSmall());
+            btnDelete.setImageDrawable(FontIconDrawable.inflate(context, R.xml.ic_list_trash));
             btnDelete.setOnClickListener(onDeleteUserStyle);
 
             String name = userStyleNames.get(i);
@@ -267,6 +304,15 @@ public class SettingsListAdapter extends BaseAdapter implements SharedPreference
             view = inflater.inflate(R.layout.settings_about_item, parent,
                     false);
 
+            ImageView copyrightIcon = (ImageView) view.findViewById(R.id.setting_about_copyright_icon);
+            copyrightIcon.setImageDrawable(FontIconDrawable.inflate(context, R.xml.ic_text_copyright));
+
+            ImageView licenseIcon = (ImageView) view.findViewById(R.id.setting_about_license_icon);
+            licenseIcon.setImageDrawable(FontIconDrawable.inflate(context, R.xml.ic_text_license));
+
+            ImageView sourceIcon = (ImageView) view.findViewById(R.id.setting_about_source_icon);
+            sourceIcon.setImageDrawable(FontIconDrawable.inflate(context, R.xml.ic_text_external_link));
+
             String appName = context.getString(R.string.app_name);
 
             String title = context.getString(R.string.setting_about, appName);
@@ -286,15 +332,15 @@ public class SettingsListAdapter extends BaseAdapter implements SharedPreference
                     context.startActivity(browserIntent);
                 }
             });
-            licenseView.setText(Html.fromHtml(license));
+            licenseView.setText(Html.fromHtml(license.trim()));
 
             PackageManager manager = context.getPackageManager();
-            String versionName = "";
+            String versionName;
             try {
                 PackageInfo info = manager.getPackageInfo(context.getPackageName(), 0);
                 versionName = info.versionName;
             } catch (PackageManager.NameNotFoundException e) {
-               throw new RuntimeException(e);
+                versionName = "?";
             }
 
             String version = context.getString(R.string.application_version, versionName);

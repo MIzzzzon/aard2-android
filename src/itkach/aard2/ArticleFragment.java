@@ -17,6 +17,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.ProgressBar;
 
+import com.shamanland.fonticon.FontIconDrawable;
+
 public class ArticleFragment extends Fragment {
 
     public static final String ARG_URL = "articleUrl";
@@ -30,13 +32,18 @@ public class ArticleFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        icBookmark = Icons.BOOKMARK.forActionBar();
-        icBookmarkO = Icons.BOOKMARK_O.forActionBar();
+        Activity activity = getActivity();
+        icBookmark = FontIconDrawable.inflate(activity, R.xml.ic_actionbar_bookmark);
+        icBookmarkO = FontIconDrawable.inflate(activity, R.xml.ic_actionbar_bookmark_o);
         setHasOptionsMenu(true);
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        //Looks like this may be called multiple times with the same menu
+        //for some reason when activity is restored, so need to clear
+        //to avoid duplicates
+        menu.clear();
         inflater.inflate(R.menu.article, menu);
         miBookmark = menu.findItem(R.id.action_bookmark_article);
     }

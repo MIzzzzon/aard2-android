@@ -2,8 +2,11 @@ package itkach.aard2;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,6 +18,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import com.shamanland.fonticon.FontIconDrawable;
 
 import java.io.File;
 
@@ -29,8 +34,26 @@ public class DictionariesFragment extends BaseListFragment {
     private DictionaryListAdapter listAdapter;
     private boolean findDictionariesOnAttach = false;
 
-    protected Icons getEmptyIcon() {
-        return Icons.DICTIONARY;
+    private class DiscoveryProgressDialog extends ProgressDialog {
+
+        public DiscoveryProgressDialog(Context context) {
+            super(context);
+            setIndeterminate(true);
+            setCancelable(false);
+            setTitle(getString(R.string.dictionaries_please_wait));
+            setMessage(getString(R.string.dictionaries_scanning_device));
+        }
+
+        @Override
+        public void onBackPressed() {
+            final Application app = (Application)getActivity().getApplication();
+            app.cancelFindDictionaries();
+        }
+    }
+
+
+    protected int getEmptyIcon() {
+        return R.xml.ic_empty_view_dictionary;
     }
 
     protected CharSequence getEmptyText() {
@@ -55,7 +78,9 @@ public class DictionariesFragment extends BaseListFragment {
         View result = super.onCreateView(inflater, container, savedInstanceState);
         View extraEmptyView = inflater.inflate(R.layout.dictionaries_empty_view_extra, container, false);
         Button btn = (Button)extraEmptyView.findViewById(R.id.dictionaries_empty_btn_scan);
-        btn.setCompoundDrawablesWithIntrinsicBounds(Icons.REFRESH.forList(), null, null, null);
+        btn.setCompoundDrawablesWithIntrinsicBounds(
+                FontIconDrawable.inflate(getActivity(), R.xml.ic_list_reload),
+                null, null, null);
         btn.setOnClickListener(new OnClickListener(){
             @Override
             public void onClick(View v) {
@@ -79,9 +104,10 @@ public class DictionariesFragment extends BaseListFragment {
     @Override
     public void onPrepareOptionsMenu(final Menu menu) {
         MenuItem miFindDictionaries = menu.findItem(R.id.action_find_dictionaries);
-        miFindDictionaries.setIcon(Icons.REFRESH.forActionBar());
+        FragmentActivity activity = getActivity();
+        miFindDictionaries.setIcon(FontIconDrawable.inflate(activity, R.xml.ic_actionbar_reload));
         MenuItem miAddDictionaries = menu.findItem(R.id.action_add_dictionaries);
-        miAddDictionaries.setIcon(Icons.ADD.forActionBar());
+        miAddDictionaries.setIcon(FontIconDrawable.inflate(activity, R.xml.ic_actionbar_add));
     }
 
     @Override
@@ -106,10 +132,7 @@ public class DictionariesFragment extends BaseListFragment {
         }
         this.findDictionariesOnAttach = false;
         final Application app = ((Application)activity.getApplication());
-        final ProgressDialog p = new ProgressDialog(getActivity());
-        p.setIndeterminate(true);
-        p.setTitle(getString(R.string.dictionaries_please_wait));
-        p.setMessage(getString(R.string.dictionaries_scanning_device));
+        final ProgressDialog p = new DiscoveryProgressDialog(getActivity());
         app.findDictionaries(new DictionaryDiscoveryCallback() {
             @Override
             public void onDiscoveryFinished() {
@@ -118,6 +141,8 @@ public class DictionariesFragment extends BaseListFragment {
         });
         p.show();
     }
+
+
 
     @Override
     public void onAttach(Activity activity) {
